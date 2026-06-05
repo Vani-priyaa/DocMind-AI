@@ -1,0 +1,11 @@
+UserID,SessionDuration,PagesVisited,Converted,Source,Device
+1,120,5,0,Google,Desktop
+2,45,2,0,Social,Mobile
+3,300,12,1,Direct,Desktop
+4,15,1,0,Google,Mobile
+5,90,4,0,Email,Desktop
+6,180,8,0,Social,Desktop
+7,240,10,1,Direct,Mobile
+8,30,2,0,Google,Mobile
+9,150,6,0,Email,Desktop
+10,400,15,1,Direct,Desktop

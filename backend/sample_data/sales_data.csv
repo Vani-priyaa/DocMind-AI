@@ -1,0 +1,16 @@
+Date,Product,Category,Region,Sales,Units,Profit
+2023-01-01,Laptop,Electronics,North,1200,1,200
+2023-01-02,Mouse,Electronics,South,25,1,10
+2023-01-03,Monitor,Electronics,East,300,1,50
+2023-01-04,Keyboard,Electronics,West,50,1,15
+2023-01-05,Laptop,Electronics,North,1200,1,200
+2023-01-06,Chair,Furniture,North,150,1,30
+2023-01-07,Desk,Furniture,South,500,1,100
+2023-01-08,Lamp,Furniture,East,45,1,10
+2023-01-09,T-Shirt,Apparel,West,20,1,5
+2023-01-10,Jeans,Apparel,North,60,1,20
+2023-01-11,Laptop,Electronics,South,1200,1,200
+2023-01-12,Mouse,Electronics,East,25,1,10
+2023-01-13,Monitor,Electronics,West,300,1,50
+2023-01-14,Keyboard,Electronics,North,50,1,15
+2023-01-15,Chair,Furniture,South,150,1,30
