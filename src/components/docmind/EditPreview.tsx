@@ -18,6 +18,7 @@ interface EditPreviewProps {
   onConfirm: () => void;
   onReject: () => void;
   loading?: boolean;
+  status?: string;
 }
 
 export function EditPreview({
@@ -29,6 +30,7 @@ export function EditPreview({
   onConfirm,
   onReject,
   loading,
+  status = "pending_confirmation",
 }: EditPreviewProps) {
   return (
     <div className="rounded-2xl border border-primary/20 bg-primary/5 overflow-hidden animate-slide-up">
@@ -103,27 +105,41 @@ export function EditPreview({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 px-5 py-3">
-        <Button
-          onClick={onConfirm}
-          disabled={loading}
-          size="sm"
-          className="rounded-xl gap-2 glow-primary"
-        >
-          <Check className="w-4 h-4" />
-          {loading ? "Applying..." : "Apply Changes"}
-        </Button>
-        <Button
-          onClick={onReject}
-          disabled={loading}
-          variant="ghost"
-          size="sm"
-          className="rounded-xl gap-2 text-muted-foreground hover:text-destructive"
-        >
-          <X className="w-4 h-4" />
-          Discard
-        </Button>
-      </div>
+      {status === "pending_confirmation" || !status ? (
+        <div className="flex items-center gap-3 px-5 py-3">
+          <Button
+            onClick={onConfirm}
+            disabled={loading}
+            size="sm"
+            className="rounded-xl gap-2 glow-primary"
+          >
+            <Check className="w-4 h-4" />
+            {loading ? "Applying..." : "Apply Changes"}
+          </Button>
+          <Button
+            onClick={onReject}
+            disabled={loading}
+            variant="ghost"
+            size="sm"
+            className="rounded-xl gap-2 text-muted-foreground hover:text-destructive"
+          >
+            <X className="w-4 h-4" />
+            Discard
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 px-5 py-3 border-t border-border/10 bg-muted/5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {status === "applied" ? (
+            <span className="text-green-500 dark:text-green-400 flex items-center gap-1.5 font-sans normal-case">
+              <Check className="w-4 h-4" /> Applied
+            </span>
+          ) : (
+            <span className="text-muted-foreground flex items-center gap-1.5 font-sans normal-case">
+              <X className="w-4 h-4" /> Discarded
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

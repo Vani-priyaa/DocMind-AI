@@ -221,6 +221,7 @@ export function DocChat({
                       onConfirm={() => onConfirmEdit(msg.editPreview.preview_id)}
                       onReject={() => onRejectEdit(msg.editPreview.preview_id)}
                       loading={editLoading}
+                      status={msg.editPreview.status}
                     />
                   )}
                 </div>

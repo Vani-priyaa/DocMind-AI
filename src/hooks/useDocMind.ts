@@ -238,21 +238,36 @@ export function useDocMind(sessionId: number | null) {
         const versionsList = Array.isArray(versions) ? versions : [];
         const latestVersion = versionsList[0];
 
-        setState((s) => ({
-          ...s,
-          editLoading: false,
-          versions: versionsList,
-          currentVersionId: latestVersion?.id || null,
-          pdfUrl: latestVersion ? getVersionFileUrl(s.activeDocId!, latestVersion.id) : null,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              content: `✅ Edit applied! Created version ${result.version_number}.`,
-              message_type: "edit",
-            },
-          ],
-        }));
+        setState((s) => {
+          const updatedMessages = s.messages.map((m) => {
+            if (m.editPreview && m.editPreview.preview_id === previewId) {
+              return {
+                ...m,
+                editPreview: {
+                  ...m.editPreview,
+                  status: "applied",
+                },
+              };
+            }
+            return m;
+          });
+
+          return {
+            ...s,
+            editLoading: false,
+            versions: versionsList,
+            currentVersionId: latestVersion?.id || null,
+            pdfUrl: latestVersion ? getVersionFileUrl(s.activeDocId!, latestVersion.id) : null,
+            messages: [
+              ...updatedMessages,
+              {
+                role: "assistant",
+                content: `✅ Edit applied! Created version ${result.version_number}.`,
+                message_type: "edit",
+              },
+            ],
+          };
+        });
 
         // Reload documents to update page count
         loadDocuments();
@@ -265,17 +280,32 @@ export function useDocMind(sessionId: number | null) {
 
   // Reject an edit
   const handleRejectEdit = useCallback((previewId: number) => {
-    setState((s) => ({
-      ...s,
-      messages: [
-        ...s.messages,
-        {
-          role: "assistant",
-          content: "Edit discarded. No changes were made to the document.",
-          message_type: "edit",
-        },
-      ],
-    }));
+    setState((s) => {
+      const updatedMessages = s.messages.map((m) => {
+        if (m.editPreview && m.editPreview.preview_id === previewId) {
+          return {
+            ...m,
+            editPreview: {
+              ...m.editPreview,
+              status: "discarded",
+            },
+          };
+        }
+        return m;
+      });
+
+      return {
+        ...s,
+        messages: [
+          ...updatedMessages,
+          {
+            role: "assistant",
+            content: "Edit discarded. No changes were made to the document.",
+            message_type: "edit",
+          },
+        ],
+      };
+    });
   }, []);
 
   // Fetch autocomplete suggestions
