@@ -95,31 +95,41 @@ class GeminiClient:
 
         # Fallback 1: NVIDIA NIM
         if settings.NVIDIA_API_KEY and settings.NVIDIA_API_KEY != "YOUR_NVIDIA_API_KEY_HERE":
-            try:
-                logger.info("Attempting fallback generation using NVIDIA NIM...")
-                from openai import AsyncOpenAI
-                client = AsyncOpenAI(
-                    api_key=settings.NVIDIA_API_KEY,
-                    base_url="https://integrate.api.nvidia.com/v1"
-                )
-                messages = []
-                if system_instruction:
-                    messages.append({"role": "system", "content": system_instruction})
-                messages.append({"role": "user", "content": prompt})
-                
-                response = await client.chat.completions.create(
-                    model="meta/llama-3.1-70b-instruct",
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=min(max_tokens, 2048)
-                )
-                if response and response.choices:
-                    val = response.choices[0].message.content
-                    if val:
-                        logger.info("NVIDIA NIM fallback generation succeeded!")
-                        return val
-            except Exception as nv_err:
-                logger.error(f"NVIDIA NIM fallback failed: {nv_err}")
+            from openai import AsyncOpenAI, RateLimitError
+            nv_client = AsyncOpenAI(
+                api_key=settings.NVIDIA_API_KEY,
+                base_url="https://integrate.api.nvidia.com/v1"
+            )
+            messages = []
+            if system_instruction:
+                messages.append({"role": "system", "content": system_instruction})
+            messages.append({"role": "user", "content": prompt})
+            
+            for nv_attempt in range(3):
+                try:
+                    logger.info(f"Attempting fallback generation using NVIDIA NIM (attempt {nv_attempt + 1})...")
+                    response = await nv_client.chat.completions.create(
+                        model="meta/llama-3.1-70b-instruct",
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=min(max_tokens, 2048)
+                    )
+                    if response and response.choices:
+                        val = response.choices[0].message.content
+                        if val:
+                            logger.info("NVIDIA NIM fallback generation succeeded!")
+                            return val
+                except RateLimitError as rl_err:
+                    logger.warning(f"NVIDIA NIM Rate Limit (429) on attempt {nv_attempt + 1}: {rl_err}")
+                    if nv_attempt < 2:
+                        sleep_time = 1.0 * (2 ** nv_attempt)
+                        logger.info(f"Waiting {sleep_time}s before retrying NVIDIA NIM...")
+                        await asyncio.sleep(sleep_time)
+                    else:
+                        logger.error("NVIDIA NIM Rate Limit attempts exhausted.")
+                except Exception as nv_err:
+                    logger.error(f"NVIDIA NIM fallback failed with unexpected error on attempt {nv_attempt + 1}: {nv_err}")
+                    break
 
         # Fallback 2: OpenAI
         if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "YOUR_OPENAI_API_KEY_HERE":

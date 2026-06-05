@@ -109,7 +109,7 @@ class RAGEngine:
         # Build content for summarization
         content = ""
         source_pages = set()
-        for chunk in chunks[:30]:  # Limit to avoid token overflow
+        for chunk in chunks[:12]:  # Limit to avoid token overflow / API rate limits
             content += f"\n[Page {chunk.page_number}]: {chunk.content[:800]}"
             source_pages.add(chunk.page_number)
 
@@ -379,8 +379,41 @@ RULES:
         prefix_lower = partial_query.lower()
         matched = [q for q in stored_questions if prefix_lower in q.lower()]
 
+        # Supplement matches from headings and topics locally (instant, zero cost)
+        for h in headings:
+            if prefix_lower in h.lower() and len(matched) < 5:
+                q = f"Tell me about {h}"
+                if q not in matched:
+                    matched.append(q)
+
+        for t in topics:
+            if prefix_lower in t.lower() and len(matched) < 5:
+                q = f"What is the detail on {t}?"
+                if q not in matched:
+                    matched.append(q)
+
         if len(matched) >= 3:
             return matched[:5]
+
+        # Check in-memory cache
+        if not hasattr(self, "_suggestion_cache"):
+            self._suggestion_cache = {}
+        if not hasattr(self, "_last_suggestion_time"):
+            self._last_suggestion_time = {}
+
+        query_key = (document_id, prefix_lower)
+        if query_key in self._suggestion_cache:
+            return self._suggestion_cache[query_key]
+
+        # Cooldown: limit LLM suggestion queries to once every 3 seconds per document
+        import time
+        now = time.time()
+        last_time = self._last_suggestion_time.get(document_id, 0)
+        if now - last_time < 3.0:
+            logger.info("Autocomplete LLM request throttled due to cooldown.")
+            return matched[:5]
+
+        self._last_suggestion_time[document_id] = now
 
         # If not enough matches, use Gemini for real-time generation
         try:
@@ -391,7 +424,9 @@ RULES:
             )
             # Combine and deduplicate
             all_suggestions = matched + [s for s in ai_suggestions if s not in matched]
-            return all_suggestions[:5]
+            res = all_suggestions[:5]
+            self._suggestion_cache[query_key] = res
+            return res
         except Exception as e:
             logger.error(f"Autocomplete generation failed: {e}")
             return matched[:5]
